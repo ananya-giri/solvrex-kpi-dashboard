@@ -1,0 +1,15 @@
+{
+  "name": "analyst-kpi-dashboard",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Zero-Spend Analyst Team KPI Dashboard (MERN Stack)",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev:backend": "node --watch backend/server.js",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build:frontend",
+    "test": "node --test backend/tests/kpi.test.js"
+  },
+  "keywords": ["kpi-dashboard", "mern", "zero-spend", "open-source"]
+}

@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen bg-slate-50 text-slate-900;
+  }
+}
+
+/* Custom Print to PDF stylesheet as per Section 2: browser Print to PDF */
+@media print {
+  nav, .filter-bar, .no-print, button, .modal-backdrop {
+    display: none !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .card-container, table {
+    page-break-inside: avoid;
+  }
+}
+
+.print-only {
+  display: none;
+}
