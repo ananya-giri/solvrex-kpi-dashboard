@@ -108,6 +108,33 @@ const ImportErrorSchema = new mongoose.Schema({
 
 ImportErrorSchema.index({ timestamp: -1 });
 
+// Solvrex Lead Ingestion Schema
+const LeadSchema = new mongoose.Schema({
+  s_no: { type: Number, required: true, index: true },
+  category: { type: String, enum: ['Student', 'Grad', 'Founder'], required: true, index: true },
+  task_id: { type: String, required: true, index: true },
+  full_name: { type: String, required: true, index: true },
+  university_or_company: { type: String, default: 'Not public' },
+  course_or_title: { type: String, default: 'Not public' },
+  graduation_or_exp: { type: String, default: 'Not public' },
+  field_or_industry: { type: String, default: 'Not public' },
+  city: { type: String, required: true, index: true },
+  country: { type: String, default: 'Canada' },
+  target_location: { type: String, default: 'Not public' },
+  job_status: { type: String, default: 'Active' },
+  open_to_work_signal: { type: String, default: 'Not public' },
+  linkedin_url: { type: String, default: 'Not public' },
+  public_email: { type: String, default: 'Not public' },
+  mobile_phone: { type: String, default: 'Not public' },
+  source_of_contact_info: { type: String, default: 'Public sources' },
+  likely_solvrex_service_fit: { type: String, default: 'Resume review, LinkedIn optimization' },
+  outreach_status: { type: String, default: 'Not contacted' },
+  date_collected: { type: String, default: '2026-11-16' },
+  notes: { type: String, default: '' }
+}, { timestamps: true });
+
+LeadSchema.index({ city: 1, category: 1 });
+
 export const User = mongoose.models.User || mongoose.model('User', UserSchema);
 export const Task = mongoose.models.Task || mongoose.model('Task', TaskSchema);
 export const QACheck = mongoose.models.QACheck || mongoose.model('QACheck', QACheckSchema);
@@ -115,3 +142,4 @@ export const Coverage = mongoose.models.Coverage || mongoose.model('Coverage', C
 export const Setting = mongoose.models.Setting || mongoose.model('Setting', SettingSchema);
 export const AuditLog = mongoose.models.AuditLog || mongoose.model('AuditLog', AuditLogSchema);
 export const ImportError = mongoose.models.ImportError || mongoose.model('ImportError', ImportErrorSchema);
+export const Lead = mongoose.models.Lead || mongoose.model('Lead', LeadSchema);

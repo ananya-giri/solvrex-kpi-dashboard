@@ -120,12 +120,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-slate-900 text-lg tracking-tight">KPI Dashboard</span>
+                <span className="font-bold text-slate-900 text-lg tracking-tight">Solvrex Private Limited</span>
                 <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded">
-                  Zero Spend
+                  KPI Dashboard
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">Analyst Team Output & Delivery</p>
+              <p className="text-xs text-slate-500 font-medium">Analyst Team Output & Delivery &bull; Solvrex Ops</p>
             </div>
           </div>
 

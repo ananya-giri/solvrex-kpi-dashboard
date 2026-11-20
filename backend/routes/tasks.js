@@ -44,24 +44,36 @@ router.get('/:id', (req, res) => {
   const coverage = db.findOne('coverage', c => c.task_id === task.id) || null;
   const analyst = db.findOne('users', u => u.id === task.analyst_id);
 
-  // Generate realistic sample row-level data for this sheet (demonstrating underlying rows)
-  const underlyingRows = [];
-  const rowCount = Math.min(task.rows_assigned, 20); // Display sample of rows
-  for (let i = 1; i <= rowCount; i++) {
-    const isCompleted = i <= (task.rows_completed / (task.rows_assigned || 1)) * rowCount;
-    const isQAChecked = qaCheck && i <= 5;
-    const isCorrect = isQAChecked && (i !== 4 || qaCheck.rows_reworked === 0);
-    underlyingRows.push({
-      row_index: i,
-      record_id: `REC-${task.id.replace('TSK-', '')}-${1000 + i}`,
-      company_name: `Enterprise Account #${1000 + i}`,
-      lead_contact: `Contact Lead ${i}`,
-      email_status: isCompleted ? 'Verified Valid' : 'Unprocessed',
-      phone_status: isCompleted ? (coverage?.field_breakdown?.phone ? 'Discovered & Formatted' : 'Missing') : 'Unprocessed',
-      qa_status: isQAChecked ? (isCorrect ? 'Pass' : 'Rework Needed') : 'Unsampled',
-      updated_at: task.delivery_date || task.date_assigned
-    });
+  // Return actual Solvrex candidate records for this sheet
+  const allLeads = db.get('leads') || [];
+  let matchingLeads = allLeads.filter(l => l.task_id === task.id);
+  
+  // Fallback to all leads or matching by category if needed
+  if (matchingLeads.length === 0) {
+    if (task.sheet_type === 'PhD Candidates') {
+      matchingLeads = allLeads.filter(l => l.category === 'Student');
+    } else if (task.sheet_type === 'Recent Graduates') {
+      matchingLeads = allLeads.filter(l => l.category === 'Grad');
+    } else {
+      matchingLeads = allLeads.filter(l => l.category === 'Founder');
+    }
   }
+
+  const underlyingRows = matchingLeads.map((lead, idx) => ({
+    row_index: idx + 1,
+    record_id: `SLV-REC-${lead.s_no || (1000 + idx)}`,
+    company_name: lead.university_or_company || 'University / Company',
+    lead_contact: lead.full_name,
+    email_status: lead.public_email && lead.public_email !== 'Not public' ? lead.public_email : 'Not public',
+    phone_status: lead.mobile_phone && lead.mobile_phone !== 'Not public' ? lead.mobile_phone : 'Not public',
+    qa_status: idx < 2 ? 'Pass' : (lead.notes && lead.notes.includes('FLAG') ? 'Flagged / Rework' : 'Verified'),
+    course_or_title: lead.course_or_title,
+    field_or_industry: lead.field_or_industry,
+    solvrex_fit: lead.likely_solvrex_service_fit,
+    city: lead.city,
+    notes: lead.notes,
+    updated_at: lead.date_collected || task.delivery_date || task.date_assigned
+  }));
 
   res.json({
     task,

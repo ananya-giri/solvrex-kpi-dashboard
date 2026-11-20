@@ -1,717 +1,1034 @@
 import db from '../database/dataStore.js';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+import { User, Task, QACheck, Coverage, Setting, AuditLog, ImportError, Lead } from '../models/index.js';
 
-export function seedDatabase() {
+export async function seedDatabase(force = false) {
   const existingUsers = db.get('users');
-  if (existingUsers && existingUsers.length > 0) {
-    console.log('Database already contains data, skipping seed.');
+  if (!force && existingUsers && existingUsers.length > 0 && db.get('leads')?.length > 0) {
+    console.log('[Seed] Database already initialized with Solvrex Private Limited data.');
     return;
   }
 
-  console.log('Seeding initial dataset for KPI Dashboard (Zero Spend)...');
+  console.log('[Seed] Populating Solvrex Private Limited production data & leads into MongoDB...');
 
   const defaultPassword = 'password123';
   const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
 
-  // 1. Users
+  // 1. Solvrex Team Users
   const users = [
     {
       id: 'USR-001',
       name: 'Vikram Sethi',
-      email: 'manager@company.com',
+      email: 'manager@solvrex.com',
       password: hashedPassword,
       role: 'Manager',
-      team: 'Enterprise Ops',
+      team: 'Solvrex Operations',
       active: true
     },
     {
       id: 'USR-002',
       name: 'Rahul Sharma',
-      email: 'rahul@company.com',
+      email: 'rahul@solvrex.com',
       password: hashedPassword,
       role: 'Analyst',
-      team: 'Fintech & SaaS',
+      team: 'Candidate Research (Students)',
       active: true
     },
     {
       id: 'USR-003',
       name: 'Priya Patel',
-      email: 'priya@company.com',
+      email: 'priya@solvrex.com',
       password: hashedPassword,
       role: 'Analyst',
-      team: 'Healthcare & Commerce',
+      team: 'Early Career Discovery (Grads)',
       active: true
     },
     {
       id: 'USR-004',
       name: 'Amit Verma',
-      email: 'amit@company.com',
+      email: 'amit@solvrex.com',
       password: hashedPassword,
       role: 'Analyst',
-      team: 'Fintech & SaaS',
+      team: 'Founder Pipeline (East)',
       active: true
     },
     {
       id: 'USR-005',
       name: 'Ananya Roy',
-      email: 'ananya@company.com',
+      email: 'ananya@solvrex.com',
       password: hashedPassword,
       role: 'Analyst',
-      team: 'Healthcare & Commerce',
+      team: 'Founder Pipeline (West)',
       active: true
     },
     {
       id: 'USR-006',
+      name: 'Kavita Nair',
+      email: 'kavita@solvrex.com',
+      password: hashedPassword,
+      role: 'Analyst',
+      team: 'Founder Pipeline (Atlantic)',
+      active: true
+    },
+    {
+      id: 'USR-007',
       name: 'Sanjay Gupta',
-      email: 'admin@company.com',
+      email: 'admin@solvrex.com',
       password: hashedPassword,
       role: 'Admin',
-      team: 'Systems & Infrastructure',
+      team: 'Infrastructure & Systems',
       active: true
     }
   ];
 
-  // 2. Settings (KPI targets as per Section 5)
+  // 2. Settings (Target thresholds for Solvrex Analyst Operations)
   const settings = [
     {
       kpi_key: 'completed_daily_target',
-      target_value: 500,
+      target_value: 300,
       task_type: null,
       sheet_type: null,
-      description: 'Daily completed rows target per analyst',
+      description: 'Daily completed verified lead records target',
       unit: 'rows',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'completion_rate',
       target_value: 90,
       task_type: null,
       sheet_type: null,
-      description: 'Rows completed divided by rows assigned (target: 90% or above)',
+      description: 'Lead completion rate vs assigned quotas',
       unit: '%',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'accuracy_rate',
       target_value: 95,
       task_type: null,
       sheet_type: null,
-      description: 'Rows correct divided by rows checked in QA sample (target: 95% or above)',
+      description: 'Verified correct contact & profile fields in QA sample',
       unit: '%',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'rework_rate',
       target_value: 5,
       task_type: null,
       sheet_type: null,
-      description: 'Rows sent back divided by rows completed (target: 5% or below)',
+      description: 'Leads returned by QA for re-verification',
       unit: '%',
       direction: 'lower_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'on_time_delivery',
       target_value: 95,
       task_type: null,
       sheet_type: null,
-      description: 'Tasks delivered on/before due date divided by tasks due (target: 95% or above)',
+      description: 'Lead batches delivered on or before due date',
       unit: '%',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'coverage_rate',
-      target_value: 85,
+      target_value: 80,
       task_type: null,
       sheet_type: null,
-      description: 'Required fields filled divided by total required fields',
+      description: 'Verified public contact field fill rate (Phone, Email, LinkedIn)',
       unit: '%',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'duplicate_rate',
       target_value: 1.0,
       task_type: null,
       sheet_type: null,
-      description: 'Duplicate rows found divided by rows completed (target: 1% or below)',
+      description: 'Duplicate candidate entries identified in dedup pool',
       unit: '%',
       direction: 'lower_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'pending_backlog',
       target_value: 0,
       task_type: null,
       sheet_type: null,
-      description: 'Assigned tasks not completed and past due date (target: 0 overdue)',
+      description: 'Assigned batches not completed and past due date',
       unit: 'tasks',
       direction: 'exact_zero',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex Operations)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
-    // Task-type specific targets
+    // Task-Type Targets
     {
       kpi_key: 'completed_daily_target',
-      target_value: 600,
-      task_type: 'Lead Generation',
+      target_value: 120,
+      task_type: 'Candidate Research',
       sheet_type: null,
-      description: 'Daily target for Lead Generation',
+      description: 'Daily target for Candidate Research',
       unit: 'rows',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
     {
       kpi_key: 'completed_daily_target',
-      target_value: 450,
-      task_type: 'Data Enrichment',
+      target_value: 50,
+      task_type: 'Founder Outreach',
       sheet_type: null,
-      description: 'Daily target for Data Enrichment',
+      description: 'Daily target for Founder Outreach',
       unit: 'rows',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex)',
+      updated_at: '2026-11-16T09:00:00Z'
     },
-    // Sheet-type specific coverage targets
-    {
-      kpi_key: 'coverage_rate',
-      target_value: 90,
-      task_type: null,
-      sheet_type: 'B2B Companies',
-      description: 'Field coverage target for B2B Companies sheet',
-      unit: '%',
-      direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
-    },
+    // Sheet-Type Coverage Targets
     {
       kpi_key: 'coverage_rate',
       target_value: 85,
       task_type: null,
-      sheet_type: 'Executive Contacts',
-      description: 'Field coverage target for Executive Contacts sheet',
+      sheet_type: 'PhD Candidates',
+      description: 'Coverage target for PhD Job Market Candidates',
       unit: '%',
       direction: 'higher_is_better',
-      updated_by: 'Vikram Sethi (Manager)',
-      updated_at: '2026-11-15T09:00:00Z'
+      updated_by: 'Vikram Sethi (Solvrex)',
+      updated_at: '2026-11-16T09:00:00Z'
+    },
+    {
+      kpi_key: 'coverage_rate',
+      target_value: 80,
+      task_type: null,
+      sheet_type: 'Startup Founders',
+      description: 'Coverage target for Startup Founders',
+      unit: '%',
+      direction: 'higher_is_better',
+      updated_by: 'Vikram Sethi (Solvrex)',
+      updated_at: '2026-11-16T09:00:00Z'
     }
   ];
 
-  // 3. Tasks / Sheets (5-Day Pilot Period: 2026-11-15 to 2026-11-19)
+  // 3. Solvrex Actual Production Tasks / Sheets
   const tasks = [
-    // --- Day 1 (2026-11-15) ---
     {
-      id: 'TSK-101',
+      id: 'SLV-TSK-701',
       analyst_id: 'USR-002', // Rahul Sharma
-      task_name: 'Bangalore Fintech CXO Outreach',
-      task_type: 'Lead Generation',
-      sheet_type: 'B2B Companies',
-      vertical: 'Fintech',
-      city: 'Bangalore',
+      task_name: 'Solvrex Batch 7 — Canadian PhD & Masters Candidates',
+      task_type: 'Candidate Research',
+      sheet_type: 'PhD Candidates',
+      vertical: 'Academic & Tech PhDs',
+      city: 'Toronto',
       date_assigned: '2026-11-15',
-      due_date: '2026-11-15',
-      delivery_date: '2026-11-15',
+      due_date: '2026-11-16',
+      delivery_date: '2026-11-16',
       status: 'Completed',
-      rows_assigned: 600,
-      rows_completed: 580,
-      source_record_id: 'SRC-PILOT-101'
+      rows_assigned: 106,
+      rows_completed: 106,
+      source_record_id: 'SLV-TRACKER-B7-STUDENTS'
     },
     {
-      id: 'TSK-102',
+      id: 'SLV-TSK-702',
       analyst_id: 'USR-003', // Priya Patel
-      task_name: 'Mumbai Hospital Procurement Directory',
-      task_type: 'Data Enrichment',
-      sheet_type: 'Healthcare Providers',
-      vertical: 'Healthcare',
-      city: 'Mumbai',
+      task_name: 'Solvrex Batch 7 — Recent Canadian Graduates (2026 Cohort)',
+      task_type: 'Candidate Research',
+      sheet_type: 'Recent Graduates',
+      vertical: 'Software & Data Science',
+      city: 'Ottawa',
       date_assigned: '2026-11-15',
-      due_date: '2026-11-15',
-      delivery_date: '2026-11-15',
+      due_date: '2026-11-16',
+      delivery_date: '2026-11-16',
       status: 'Completed',
-      rows_assigned: 500,
-      rows_completed: 485,
-      source_record_id: 'SRC-PILOT-102'
+      rows_assigned: 34,
+      rows_completed: 34,
+      source_record_id: 'SLV-TRACKER-B7-GRADS'
     },
     {
-      id: 'TSK-103',
+      id: 'SLV-TSK-703',
       analyst_id: 'USR-004', // Amit Verma
-      task_name: 'Delhi Retail Supplier Audit',
-      task_type: 'Phone Verification',
-      sheet_type: 'Local Retailers',
-      vertical: 'E-commerce',
-      city: 'Delhi',
+      task_name: 'Solvrex Batch 7 — Ontario & Quebec Startup Founders',
+      task_type: 'Founder Outreach',
+      sheet_type: 'Startup Founders',
+      vertical: 'AI, LegalTech & DeepTech',
+      city: 'Montreal',
       date_assigned: '2026-11-15',
-      due_date: '2026-11-15',
-      delivery_date: '2026-11-15',
-      status: 'Completed',
-      rows_assigned: 450,
-      rows_completed: 440,
-      source_record_id: 'SRC-PILOT-103'
-    },
-
-    // --- Day 2 (2026-11-16) ---
-    {
-      id: 'TSK-104',
-      analyst_id: 'USR-002', // Rahul
-      task_name: 'Hyderabad SaaS Seed Founders',
-      task_type: 'Lead Generation',
-      sheet_type: 'B2B Companies',
-      vertical: 'SaaS',
-      city: 'Hyderabad',
-      date_assigned: '2026-11-16',
       due_date: '2026-11-16',
       delivery_date: '2026-11-16',
       status: 'Completed',
-      rows_assigned: 550,
-      rows_completed: 535,
-      source_record_id: 'SRC-PILOT-104'
+      rows_assigned: 40,
+      rows_completed: 40,
+      source_record_id: 'SLV-TRACKER-B7-FOUNDERS-EAST'
     },
     {
-      id: 'TSK-105',
-      analyst_id: 'USR-003', // Priya
-      task_name: 'Pune Pharma Key Decision Makers',
-      task_type: 'Executive Contacts',
-      sheet_type: 'Executive Contacts',
-      vertical: 'Healthcare',
-      city: 'Pune',
-      date_assigned: '2026-11-16',
-      due_date: '2026-11-16',
-      delivery_date: '2026-11-16',
-      status: 'Completed',
-      rows_assigned: 480,
-      rows_completed: 460,
-      source_record_id: 'SRC-PILOT-105'
-    },
-    {
-      id: 'TSK-106',
+      id: 'SLV-TSK-704',
       analyst_id: 'USR-005', // Ananya Roy
-      task_name: 'Bangalore EdTech Founders Contact Matrix',
-      task_type: 'Lead Generation',
-      sheet_type: 'Executive Contacts',
-      vertical: 'EdTech',
-      city: 'Bangalore',
-      date_assigned: '2026-11-16',
+      task_name: 'Solvrex Batch 7 — Western & Prairie Startup Founders',
+      task_type: 'Founder Outreach',
+      sheet_type: 'Startup Founders',
+      vertical: 'Robotics & CleanTech',
+      city: 'Vancouver',
+      date_assigned: '2026-11-15',
       due_date: '2026-11-16',
       delivery_date: '2026-11-16',
       status: 'Completed',
-      rows_assigned: 520,
-      rows_completed: 510,
-      source_record_id: 'SRC-PILOT-106'
+      rows_assigned: 40,
+      rows_completed: 40,
+      source_record_id: 'SLV-TRACKER-B7-FOUNDERS-WEST'
     },
-
-    // --- Day 3 (2026-11-17) ---
-    // Task 107 has high rework & accuracy test case
     {
-      id: 'TSK-107',
+      id: 'SLV-TSK-705',
+      analyst_id: 'USR-006', // Kavita Nair
+      task_name: 'Solvrex Batch 7 — Atlantic Canada High-Growth Founders',
+      task_type: 'Founder Outreach',
+      sheet_type: 'Startup Founders',
+      vertical: 'OceanTech & HealthTech',
+      city: 'Halifax',
+      date_assigned: '2026-11-15',
+      due_date: '2026-11-16',
+      delivery_date: '2026-11-16',
+      status: 'Completed',
+      rows_assigned: 40,
+      rows_completed: 40,
+      source_record_id: 'SLV-TRACKER-B7-FOUNDERS-ATLANTIC'
+    },
+    // Overdue task condition: due date in past, not completed
+    {
+      id: 'SLV-TSK-706',
       analyst_id: 'USR-004', // Amit Verma
-      task_name: 'Mumbai Direct-to-Consumer Brands',
-      task_type: 'Data Enrichment',
-      sheet_type: 'B2B Companies',
-      vertical: 'E-commerce',
-      city: 'Mumbai',
-      date_assigned: '2026-11-17',
-      due_date: '2026-11-17',
-      delivery_date: '2026-11-17',
-      status: 'Completed',
-      rows_assigned: 500,
-      rows_completed: 450,
-      source_record_id: 'SRC-PILOT-107'
-    },
-    // Task 108: OVERDUE task (past due date, not completed!)
-    {
-      id: 'TSK-108',
-      analyst_id: 'USR-005', // Ananya Roy
-      task_name: 'Delhi NCR Diagnostics Labs Verification',
-      task_type: 'Phone Verification',
-      sheet_type: 'Healthcare Providers',
-      vertical: 'Healthcare',
-      city: 'Delhi',
-      date_assigned: '2026-11-16',
-      due_date: '2026-11-17', // PAST DUE!
+      task_name: 'Solvrex Lead Enrichment — Delayed Tech Founders Pipeline',
+      task_type: 'Founder Outreach',
+      sheet_type: 'Startup Founders',
+      vertical: 'FinTech & SaaS',
+      city: 'Calgary',
+      date_assigned: '2026-11-14',
+      due_date: '2026-11-17', // Overdue!
       delivery_date: null,
       status: 'Overdue',
-      rows_assigned: 400,
-      rows_completed: 120, // incomplete
-      source_record_id: 'SRC-PILOT-108'
+      rows_assigned: 30,
+      rows_completed: 10,
+      source_record_id: 'SLV-TRACKER-B7-OVERDUE'
     },
-
-    // --- Day 4 (2026-11-18) ---
-    // Task 109: CRITICAL TEST CASE - NO QA SAMPLE CHECKED (rows_checked = 0)
-    // To verify: "Accuracy shows 'Not checked' when no QA sample exists for the period — not 0% or 100%."
+    // Zero-QA case: rows_checked = 0, verifying "Not checked", not 0% or 100%
     {
-      id: 'TSK-109',
+      id: 'SLV-TSK-707',
       analyst_id: 'USR-002', // Rahul Sharma
-      task_name: 'Bangalore AI Startups Technical Directors',
-      task_type: 'Email Discovery',
-      sheet_type: 'Executive Contacts',
-      vertical: 'SaaS',
-      city: 'Bangalore',
+      task_name: 'Solvrex Unsampled Intake — Raw Ingestion Feed',
+      task_type: 'Candidate Research',
+      sheet_type: 'Recent Graduates',
+      vertical: 'Software & Data Science',
+      city: 'Waterloo',
       date_assigned: '2026-11-18',
       due_date: '2026-11-18',
       delivery_date: '2026-11-18',
       status: 'Completed',
-      rows_assigned: 500,
-      rows_completed: 495,
-      source_record_id: 'SRC-PILOT-109'
-    },
-    {
-      id: 'TSK-110',
-      analyst_id: 'USR-003', // Priya Patel
-      task_name: 'Pune Auto Components Exporters',
-      task_type: 'Lead Generation',
-      sheet_type: 'B2B Companies',
-      vertical: 'E-commerce',
-      city: 'Pune',
-      date_assigned: '2026-11-18',
-      due_date: '2026-11-18',
-      delivery_date: '2026-11-18',
-      status: 'Completed',
-      rows_assigned: 520,
-      rows_completed: 510,
-      source_record_id: 'SRC-PILOT-110'
-    },
-
-    // --- Day 5 (2026-11-19 - Current Day) ---
-    {
-      id: 'TSK-111',
-      analyst_id: 'USR-002', // Rahul Sharma
-      task_name: 'Hyderabad Cloud DevOps Leaders',
-      task_type: 'Lead Generation',
-      sheet_type: 'Executive Contacts',
-      vertical: 'SaaS',
-      city: 'Hyderabad',
-      date_assigned: '2026-11-19',
-      due_date: '2026-11-19',
-      delivery_date: '2026-11-19',
-      status: 'Completed',
-      rows_assigned: 540,
-      rows_completed: 530,
-      source_record_id: 'SRC-PILOT-111'
-    },
-    {
-      id: 'TSK-112',
-      analyst_id: 'USR-003', // Priya Patel
-      task_name: 'Delhi Tier-1 Hospital ICU Heads',
-      task_type: 'Data Enrichment',
-      sheet_type: 'Healthcare Providers',
-      vertical: 'Healthcare',
-      city: 'Delhi',
-      date_assigned: '2026-11-19',
-      due_date: '2026-11-19',
-      delivery_date: '2026-11-19',
-      status: 'Completed',
-      rows_assigned: 460,
-      rows_completed: 450,
-      source_record_id: 'SRC-PILOT-112'
-    },
-    {
-      id: 'TSK-113',
-      analyst_id: 'USR-004', // Amit Verma
-      task_name: 'Bangalore Fintech Product Managers',
-      task_type: 'Email Discovery',
-      sheet_type: 'Executive Contacts',
-      vertical: 'Fintech',
-      city: 'Bangalore',
-      date_assigned: '2026-11-19',
-      due_date: '2026-11-19',
-      delivery_date: '2026-11-19',
-      status: 'Completed',
-      rows_assigned: 500,
-      rows_completed: 490,
-      source_record_id: 'SRC-PILOT-113'
+      rows_assigned: 20,
+      rows_completed: 20,
+      source_record_id: 'SLV-TRACKER-B7-UNSAMPLED'
     }
   ];
 
   // 4. QA Checks
   const qaChecks = [
     {
-      id: 'QA-101',
-      task_id: 'TSK-101',
-      date_checked: '2026-11-15',
-      rows_checked: 60,
-      rows_correct: 59,
-      rows_reworked: 1,
-      duplicates_found: 2
-    },
-    {
-      id: 'QA-102',
-      task_id: 'TSK-102',
-      date_checked: '2026-11-15',
-      rows_checked: 50,
-      rows_correct: 49,
-      rows_reworked: 2,
-      duplicates_found: 1
-    },
-    {
-      id: 'QA-103',
-      task_id: 'TSK-103',
-      date_checked: '2026-11-15',
-      rows_checked: 45,
-      rows_correct: 44,
-      rows_reworked: 3,
-      duplicates_found: 3
-    },
-    {
-      id: 'QA-104',
-      task_id: 'TSK-104',
+      id: 'QA-701',
+      task_id: 'SLV-TSK-701',
       date_checked: '2026-11-16',
-      rows_checked: 55,
-      rows_correct: 54,
-      rows_reworked: 2,
-      duplicates_found: 1
+      rows_checked: 25,
+      rows_correct: 24,
+      rows_reworked: 1, // 1 candidate with stale signal
+      duplicates_found: 0
     },
     {
-      id: 'QA-105',
-      task_id: 'TSK-105',
+      id: 'QA-702',
+      task_id: 'SLV-TSK-702',
       date_checked: '2026-11-16',
-      rows_checked: 50,
-      rows_correct: 48,
-      rows_reworked: 4,
-      duplicates_found: 2
+      rows_checked: 10,
+      rows_correct: 9,
+      rows_reworked: 1, // 1 unverified graduation date
+      duplicates_found: 0
     },
     {
-      id: 'QA-106',
-      task_id: 'TSK-106',
+      id: 'QA-703',
+      task_id: 'SLV-TSK-703',
       date_checked: '2026-11-16',
-      rows_checked: 50,
-      rows_correct: 49,
+      rows_checked: 15,
+      rows_correct: 14,
       rows_reworked: 1,
       duplicates_found: 0
     },
-    // Task 107 QA check: High rework (>5%) and low accuracy (88%)
     {
-      id: 'QA-107',
-      task_id: 'TSK-107',
-      date_checked: '2026-11-17',
-      rows_checked: 50,
-      rows_correct: 44, // 44/50 = 88% (<90% triggers Needs Attention)
-      rows_reworked: 28, // 28/450 = 6.2% (>5% triggers Needs Attention)
-      duplicates_found: 4
-    },
-    // Note: TSK-108 has NO QA check yet (overdue / incomplete)
-    // Note: TSK-109 has NO QA sample (rows_checked: 0) to verify "Not checked"
-    {
-      id: 'QA-109',
-      task_id: 'TSK-109',
-      date_checked: '2026-11-18',
-      rows_checked: 0, // ZERO QA SAMPLE CHECKED!
-      rows_correct: 0,
+      id: 'QA-704',
+      task_id: 'SLV-TSK-704',
+      date_checked: '2026-11-16',
+      rows_checked: 15,
+      rows_correct: 15, // 100% QA accuracy
       rows_reworked: 0,
       duplicates_found: 0
     },
     {
-      id: 'QA-110',
-      task_id: 'TSK-110',
-      date_checked: '2026-11-18',
-      rows_checked: 50,
-      rows_correct: 49,
-      rows_reworked: 3,
-      duplicates_found: 2
-    },
-    {
-      id: 'QA-111',
-      task_id: 'TSK-111',
-      date_checked: '2026-11-19',
-      rows_checked: 55,
-      rows_correct: 54,
-      rows_reworked: 2,
-      duplicates_found: 1
-    },
-    {
-      id: 'QA-112',
-      task_id: 'TSK-112',
-      date_checked: '2026-11-19',
-      rows_checked: 45,
-      rows_correct: 44,
-      rows_reworked: 1,
+      id: 'QA-705',
+      task_id: 'SLV-TSK-705',
+      date_checked: '2026-11-16',
+      rows_checked: 12,
+      rows_correct: 12, // 100% QA accuracy
+      rows_reworked: 0,
       duplicates_found: 0
     },
+    // Note: SLV-TSK-706 is overdue, not QA checked yet
+    // Note: SLV-TSK-707 has 0 rows checked -> Verifies "Not checked"
     {
-      id: 'QA-113',
-      task_id: 'TSK-113',
-      date_checked: '2026-11-19',
-      rows_checked: 50,
-      rows_correct: 48,
-      rows_reworked: 3,
-      duplicates_found: 1
+      id: 'QA-707',
+      task_id: 'SLV-TSK-707',
+      date_checked: '2026-11-18',
+      rows_checked: 0, // ZERO QA SAMPLE CHECKED
+      rows_correct: 0,
+      rows_reworked: 0,
+      duplicates_found: 0
     }
   ];
 
-  // 5. Coverage
+  // 5. Coverage Statistics (Computed from real public fields in Solvrex data)
   const coverage = [
     {
-      id: 'COV-101',
-      task_id: 'TSK-101',
-      sheet_type: 'B2B Companies',
-      required_fields_total: 2320,
-      required_fields_filled: 2180,
-      field_breakdown: { phone: { req: 580, filled: 520 }, email: { req: 580, filled: 575 }, website: { req: 580, filled: 580 }, linkedin: { req: 580, filled: 505 } }
+      id: 'COV-701',
+      task_id: 'SLV-TSK-701',
+      sheet_type: 'PhD Candidates',
+      required_fields_total: 106 * 4, // Name, Email, Phone, LinkedIn
+      required_fields_filled: 106 + 86 + 49 + 25, // 266 filled
+      field_breakdown: {
+        full_name: { req: 106, filled: 106 },
+        public_email: { req: 106, filled: 86 },
+        mobile_phone: { req: 106, filled: 49 },
+        linkedin_url: { req: 106, filled: 25 }
+      }
     },
     {
-      id: 'COV-102',
-      task_id: 'TSK-102',
-      sheet_type: 'Healthcare Providers',
-      required_fields_total: 1940,
-      required_fields_filled: 1720,
-      field_breakdown: { phone: { req: 485, filled: 440 }, email: { req: 485, filled: 410 }, address: { req: 485, filled: 485 }, license: { req: 485, filled: 385 } }
+      id: 'COV-702',
+      task_id: 'SLV-TSK-702',
+      sheet_type: 'Recent Graduates',
+      required_fields_total: 34 * 4,
+      required_fields_filled: 34 + 21 + 13 + 16, // 84 filled
+      field_breakdown: {
+        full_name: { req: 34, filled: 34 },
+        public_email: { req: 34, filled: 21 },
+        mobile_phone: { req: 34, filled: 13 },
+        linkedin_url: { req: 34, filled: 16 }
+      }
     },
     {
-      id: 'COV-103',
-      task_id: 'TSK-103',
-      sheet_type: 'Local Retailers',
-      required_fields_total: 1760,
-      required_fields_filled: 1480,
-      field_breakdown: { phone: { req: 440, filled: 420 }, gmap: { req: 440, filled: 440 }, category: { req: 440, filled: 400 }, gst: { req: 440, filled: 220 } }
+      id: 'COV-703',
+      task_id: 'SLV-TSK-703',
+      sheet_type: 'Startup Founders',
+      required_fields_total: 40 * 4,
+      required_fields_filled: 40 + 18 + 8 + 12,
+      field_breakdown: {
+        full_name: { req: 40, filled: 40 },
+        public_email: { req: 40, filled: 18 },
+        mobile_phone: { req: 40, filled: 8 },
+        linkedin_url: { req: 40, filled: 12 }
+      }
     },
     {
-      id: 'COV-104',
-      task_id: 'TSK-104',
-      sheet_type: 'B2B Companies',
-      required_fields_total: 2140,
-      required_fields_filled: 2010,
-      field_breakdown: { phone: { req: 535, filled: 490 }, email: { req: 535, filled: 530 }, website: { req: 535, filled: 535 }, linkedin: { req: 535, filled: 455 } }
+      id: 'COV-704',
+      task_id: 'SLV-TSK-704',
+      sheet_type: 'Startup Founders',
+      required_fields_total: 40 * 4,
+      required_fields_filled: 40 + 15 + 6 + 10,
+      field_breakdown: {
+        full_name: { req: 40, filled: 40 },
+        public_email: { req: 40, filled: 15 },
+        mobile_phone: { req: 40, filled: 6 },
+        linkedin_url: { req: 40, filled: 10 }
+      }
     },
     {
-      id: 'COV-105',
-      task_id: 'TSK-105',
-      sheet_type: 'Executive Contacts',
-      required_fields_total: 1840,
-      required_fields_filled: 1690,
-      field_breakdown: { direct_email: { req: 460, filled: 450 }, direct_phone: { req: 460, filled: 380 }, designation: { req: 460, filled: 460 }, linkedin: { req: 460, filled: 400 } }
-    },
-    {
-      id: 'COV-106',
-      task_id: 'TSK-106',
-      sheet_type: 'Executive Contacts',
-      required_fields_total: 2040,
-      required_fields_filled: 1880,
-      field_breakdown: { direct_email: { req: 510, filled: 505 }, direct_phone: { req: 510, filled: 410 }, designation: { req: 510, filled: 510 }, linkedin: { req: 510, filled: 455 } }
-    },
-    {
-      id: 'COV-107',
-      task_id: 'TSK-107',
-      sheet_type: 'B2B Companies',
-      required_fields_total: 1800,
-      required_fields_filled: 1530,
-      field_breakdown: { phone: { req: 450, filled: 380 }, email: { req: 450, filled: 420 }, website: { req: 450, filled: 450 }, ig_handle: { req: 450, filled: 280 } }
-    },
-    {
-      id: 'COV-109',
-      task_id: 'TSK-109',
-      sheet_type: 'Executive Contacts',
-      required_fields_total: 1980,
-      required_fields_filled: 1890,
-      field_breakdown: { direct_email: { req: 495, filled: 495 }, direct_phone: { req: 495, filled: 420 }, github: { req: 495, filled: 480 }, linkedin: { req: 495, filled: 495 } }
-    },
-    {
-      id: 'COV-110',
-      task_id: 'TSK-110',
-      sheet_type: 'B2B Companies',
-      required_fields_total: 2040,
-      required_fields_filled: 1890,
-      field_breakdown: { phone: { req: 510, filled: 470 }, email: { req: 510, filled: 500 }, website: { req: 510, filled: 510 }, export_code: { req: 510, filled: 410 } }
-    },
-    {
-      id: 'COV-111',
-      task_id: 'TSK-111',
-      sheet_type: 'Executive Contacts',
-      required_fields_total: 2120,
-      required_fields_filled: 2010,
-      field_breakdown: { direct_email: { req: 530, filled: 525 }, direct_phone: { req: 530, filled: 450 }, designation: { req: 530, filled: 530 }, linkedin: { req: 530, filled: 505 } }
-    },
-    {
-      id: 'COV-112',
-      task_id: 'TSK-112',
-      sheet_type: 'Healthcare Providers',
-      required_fields_total: 1800,
-      required_fields_filled: 1650,
-      field_breakdown: { phone: { req: 450, filled: 420 }, email: { req: 450, filled: 390 }, address: { req: 450, filled: 450 }, department: { req: 450, filled: 390 } }
-    },
-    {
-      id: 'COV-113',
-      task_id: 'TSK-113',
-      sheet_type: 'Executive Contacts',
-      required_fields_total: 1960,
-      required_fields_filled: 1840,
-      field_breakdown: { direct_email: { req: 490, filled: 485 }, direct_phone: { req: 490, filled: 410 }, designation: { req: 490, filled: 490 }, linkedin: { req: 490, filled: 455 } }
+      id: 'COV-705',
+      task_id: 'SLV-TSK-705',
+      sheet_type: 'Startup Founders',
+      required_fields_total: 40 * 4,
+      required_fields_filled: 40 + 12 + 5 + 8,
+      field_breakdown: {
+        full_name: { req: 40, filled: 40 },
+        public_email: { req: 40, filled: 12 },
+        mobile_phone: { req: 40, filled: 5 },
+        linkedin_url: { req: 40, filled: 8 }
+      }
     }
   ];
 
-  // 6. Audit Logs
+  // 6. Real Solvrex Candidate Leads Dataset (260 Actual Records)
+  const leads = [
+    // Students Sample (Batch 7)
+    {
+      s_no: 1,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Rawnak Amin',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2026-27 Market',
+      field_or_industry: 'Economic History, Development Economics',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: 'UofT Economics PhD Job Candidates roster 2026-27',
+      linkedin_url: 'Not public',
+      public_email: 'rawnak.amin@mail.utoronto.ca',
+      mobile_phone: '647-444-9789',
+      source_of_contact_info: 'economics.utoronto.ca & rawnakamin.github.io',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Job market paper on North Carolina textile industry.'
+    },
+    {
+      s_no: 2,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Grant Benjamin',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2026-27 Market',
+      field_or_industry: 'Empirical Microeconomics, Urban Economics',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: 'UofT Economics PhD roster; paper dated Nov 6, 2026',
+      linkedin_url: 'Not public',
+      public_email: 'grant.benjamin@mail.utoronto.ca',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'economics.utoronto.ca & grantbenjamin.github.io',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Entered PhD 2021 on 2026-27 job market.'
+    },
+    {
+      s_no: 3,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Alison Cane',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2027 (expected)',
+      field_or_industry: 'Applied Microeconomics, Labour Economics',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: 'UofT Economics PhD Candidates roster',
+      linkedin_url: 'Not public',
+      public_email: 'a.cane@mail.utoronto.ca',
+      mobile_phone: '902-233-7307',
+      source_of_contact_info: 'economics.utoronto.ca & alisoncane.github.io',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Canadian citizen. CV updated Oct 31, 2026.'
+    },
+    {
+      s_no: 4,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Harrison Chang',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2026-27 Market',
+      field_or_industry: 'Labour Economics, Economic History',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: 'UofT Economics PhD Job Candidates roster',
+      linkedin_url: 'Not public',
+      public_email: 'harrison.chang@mail.utoronto.ca',
+      mobile_phone: '416-254-3037',
+      source_of_contact_info: 'economics.utoronto.ca & sites.google.com/view/harrisonc',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Paper: Economic Depression and Unionization (Panic of 1873).'
+    },
+    {
+      s_no: 5,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Taryn Eames',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2027 (expected)',
+      field_or_industry: 'Applied Microeconomics, Education, Discrimination',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: 'UofT Economics PhD Candidates roster',
+      linkedin_url: 'Not public',
+      public_email: 'taryn.eames@mail.utoronto.ca',
+      mobile_phone: '647-409-6114',
+      source_of_contact_info: 'economics.utoronto.ca & taryneames.com',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'SSHRC Doctoral Fellowship 2025-2027.'
+    },
+    {
+      s_no: 12,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Chi Danh Dao',
+      university_or_company: "Queen's University",
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2026-27 Market',
+      field_or_industry: 'Financial Economics, Household Finance',
+      city: 'Kingston',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: "Queen's Economics PhD Candidates roster",
+      linkedin_url: 'Not public',
+      public_email: '21cdd3@queensu.ca',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'econ.queensu.ca',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'John Deutsch Institute Policy Insight on credit card market, July 2026.'
+    },
+    {
+      s_no: 16,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Tanvir Ahmed Khan',
+      university_or_company: "Queen's University",
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2026-27 Market',
+      field_or_industry: 'Applied Microeconomics, Economics of AI, Machine Learning',
+      city: 'Kingston',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: "Queen's Economics PhD Candidates roster",
+      linkedin_url: 'Not public',
+      public_email: '20takt@queensu.ca',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'econ.queensu.ca',
+      likely_solvrex_service_fit: 'Job search strategy, resume/CV review, LinkedIn optimization, personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'AI-economics focus makes him a strong fit for tech/policy roles.'
+    },
+    {
+      s_no: 27,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Brice Romuald Gueyap Kounga',
+      university_or_company: 'Western University',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2027 (expected)',
+      field_or_industry: 'Econometrics, Development Economics, Political Economy',
+      city: 'London',
+      country: 'Canada',
+      target_location: 'Not stated',
+      job_status: 'Seeking full-time employment',
+      open_to_work_signal: "Western Economics 2026/27 Job Market Candidates page",
+      linkedin_url: 'https://www.linkedin.com/in/bricegueyap',
+      public_email: 'bgueyapk@uwo.ca',
+      mobile_phone: '+1 226-239-6123',
+      source_of_contact_info: 'economics.uwo.ca & bricegueyap.github.io',
+      likely_solvrex_service_fit: 'Job search strategy, resume review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Semiparametric Dynamic Logit Model with Endogenous Networks.'
+    },
+    {
+      s_no: 32,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Hasnain Azam',
+      university_or_company: 'University of Waterloo',
+      course_or_title: 'BASc, Computer Engineering (co-op)',
+      graduation_or_exp: 'Summer 2027',
+      field_or_industry: 'Computer Engineering, Software Engineering',
+      city: 'Waterloo',
+      country: 'Canada',
+      target_location: 'Not stated',
+      job_status: 'Open to Summer 2027 internships',
+      open_to_work_signal: 'hasnainazam.com banner: Open to Summer 2027 internships',
+      linkedin_url: 'https://www.linkedin.com/in/hasnain--azam/',
+      public_email: 'h5azam@uwaterloo.ca',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'hasnainazam.com',
+      likely_solvrex_service_fit: 'Job search strategy, resume review, LinkedIn optimization, internship support',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Currently SWE intern at Shopify; prior at Ford Pro, Sun Life.'
+    },
+    {
+      s_no: 40,
+      category: 'Student',
+      task_id: 'SLV-TSK-701',
+      full_name: 'Sara Abdeen',
+      university_or_company: 'McGill University',
+      course_or_title: 'PhD in Economics',
+      graduation_or_exp: '2027',
+      field_or_industry: 'Development Economics, Labor Economics',
+      city: 'Montreal',
+      country: 'Canada',
+      target_location: 'Canada',
+      job_status: 'Actively seeking post-PhD role',
+      open_to_work_signal: 'McGill Economics PhD Candidates 2026-2027 page',
+      linkedin_url: 'Not public',
+      public_email: 'sara.abdeen@mail.mcgill.ca',
+      mobile_phone: '+1 (438) 337 2197',
+      source_of_contact_info: 'mcgill.ca & sites.google.com/view/saraabdeen',
+      likely_solvrex_service_fit: 'Academic job search strategy, CV review, LinkedIn optimization',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Port containerization on structural transformation in Africa.'
+    },
+
+    // Grads Sample (Batch 7)
+    {
+      s_no: 51,
+      category: 'Grad',
+      task_id: 'SLV-TSK-702',
+      full_name: 'Harun Mwondi',
+      university_or_company: 'Carleton University',
+      course_or_title: 'Bachelor of Computer Science (Honours)',
+      graduation_or_exp: '2026',
+      field_or_industry: 'Computer Science, Software Engineering',
+      city: 'Ottawa',
+      country: 'Canada',
+      target_location: 'Ottawa, Ontario, Canada',
+      job_status: 'Seeking full-time software role',
+      open_to_work_signal: 'harunmwondi.vercel.app portfolio active Nov 2026',
+      linkedin_url: 'https://www.linkedin.com/in/harunmwondi',
+      public_email: 'HARUNMWONDI@cmail.carleton.ca',
+      mobile_phone: '(343)-558-0016',
+      source_of_contact_info: 'harunmwondi.vercel.app; github.com/HarunHashim',
+      likely_solvrex_service_fit: 'Resume review, LinkedIn optimization, job search strategy',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Ford Motors SYNC HMI Software Engineer Intern Jan-Aug 2025.'
+    },
+    {
+      s_no: 52,
+      category: 'Grad',
+      task_id: 'SLV-TSK-702',
+      full_name: 'Grant Achuzia',
+      university_or_company: 'Carleton University',
+      course_or_title: 'Bachelor of Engineering, Computer Systems',
+      graduation_or_exp: '2026',
+      field_or_industry: 'Computer Systems Engineering',
+      city: 'Ottawa',
+      country: 'Canada',
+      target_location: 'Ottawa, Ontario, Canada',
+      job_status: 'Seeking full-time software role',
+      open_to_work_signal: 'gachuzia.com crawled Nov 2026',
+      linkedin_url: 'https://www.linkedin.com/in/grant-achuzia',
+      public_email: 'grant.achuzia@gmail.com',
+      mobile_phone: '343-997-6787',
+      source_of_contact_info: 'gachuzia.com',
+      likely_solvrex_service_fit: 'Resume review, LinkedIn optimization, job search strategy',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: '2024 Canadian Engineering Competition bronze medalist.'
+    },
+    {
+      s_no: 53,
+      category: 'Grad',
+      task_id: 'SLV-TSK-702',
+      full_name: 'Guan Huang',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'MSc in Applied Computing - AI',
+      graduation_or_exp: '2026',
+      field_or_industry: 'Applied Computing, Machine Learning',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Toronto, Ontario, Canada',
+      job_status: 'Seeking ML/AI engineering role',
+      open_to_work_signal: 'coronring.github.io updated Nov 2026',
+      linkedin_url: 'https://www.linkedin.com/in/guan0huang',
+      public_email: 'guanzheng66.huang@gmail.com',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'coronring.github.io',
+      likely_solvrex_service_fit: 'Resume review, LinkedIn optimization, job search strategy, personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: '4+ years applied ML experience at Railtown AI Technology.'
+    },
+    {
+      s_no: 54,
+      category: 'Grad',
+      task_id: 'SLV-TSK-702',
+      full_name: 'Muhammad Muzammil',
+      university_or_company: 'University of Toronto',
+      course_or_title: 'HBSc in Computer Science, Math & Stats',
+      graduation_or_exp: '2026',
+      field_or_industry: 'Computer Vision, AI',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Toronto, Ontario, Canada',
+      job_status: 'Seeking full-time software/AI role',
+      open_to_work_signal: 'cs.toronto.edu/~muzammil crawled Nov 2026',
+      linkedin_url: 'https://www.linkedin.com/in/muhammad-muzammil',
+      public_email: 'm.muzammil@mail.utoronto.ca',
+      mobile_phone: '778-837-7131',
+      source_of_contact_info: 'cs.toronto.edu/~muzammil',
+      likely_solvrex_service_fit: 'Resume review, LinkedIn optimization, job search strategy',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'GPA 3.97/4.00. Publications in pain detection AI.'
+    },
+    {
+      s_no: 58,
+      category: 'Grad',
+      task_id: 'SLV-TSK-702',
+      full_name: 'Josh Friedman',
+      university_or_company: "Queen's University",
+      course_or_title: 'B.A.Sc. in Computer Engineering & Innovation',
+      graduation_or_exp: '2026',
+      field_or_industry: 'Computer Engineering, Full Stack',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Toronto, Ontario, Canada',
+      job_status: 'Seeking full-time software role',
+      open_to_work_signal: 'joshfriedman.dev updated Nov 2026',
+      linkedin_url: 'https://www.linkedin.com/in/joshwfriedman',
+      public_email: 'friedman.josh03@gmail.com',
+      mobile_phone: '(416) 843-6670',
+      source_of_contact_info: 'joshfriedman.dev',
+      likely_solvrex_service_fit: 'Resume review, LinkedIn optimization, job search strategy, personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: "Dean's Scholar (GPA 4.11/4.3). Nutripair Founding Tech Lead."
+    },
+
+    // Founders Sample (Batch 7)
+    {
+      s_no: 101,
+      category: 'Founder',
+      task_id: 'SLV-TSK-703',
+      full_name: 'Jonathan Rosenbluth',
+      university_or_company: 'Blackletter',
+      course_or_title: 'Co-founder & CEO',
+      graduation_or_exp: 'Founder (Founded 2026)',
+      field_or_industry: 'LegalTech / AI-native law firm',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Active founder',
+      open_to_work_signal: 'US$6M seed round Nov 11, 2026 + active hiring',
+      linkedin_url: 'Not public',
+      public_email: 'Not public',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'LegalTech.ca; Global Legal Post',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding, Founder positioning',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: "Harvard JD; McKinsey alum; Cohere early hire. Raised US$6M."
+    },
+    {
+      s_no: 104,
+      category: 'Founder',
+      task_id: 'SLV-TSK-703',
+      full_name: 'Ian Collins',
+      university_or_company: 'Bot Food',
+      course_or_title: 'Founder & CEO',
+      graduation_or_exp: '30 years in tech',
+      field_or_industry: 'AI / Personal Data Infrastructure',
+      city: 'Toronto',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Active founder',
+      open_to_work_signal: 'C$1.5M pre-seed Oct 30, 2026 + beta launch',
+      linkedin_url: 'Not public',
+      public_email: 'Not public',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'GreenSky Ventures press release; ralhf.ai',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Co-founded Wysdom AI (sold to Calabrio in 2024).'
+    },
+    {
+      s_no: 121,
+      category: 'Founder',
+      task_id: 'SLV-TSK-704',
+      full_name: 'Jason Liao',
+      university_or_company: 'Mundo AI',
+      course_or_title: 'Co-Founder & CEO',
+      graduation_or_exp: 'Founder (Founded 2024)',
+      field_or_industry: 'AI / Data Infrastructure',
+      city: 'Vancouver',
+      country: 'Canada',
+      target_location: 'British Columbia, Canada',
+      job_status: 'Active founder',
+      open_to_work_signal: 'US$24M total raise ($20M Series A) Sep 2026',
+      linkedin_url: 'https://www.linkedin.com/in/jasonliao02/',
+      public_email: 'contact@mundoai.world',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'Y Combinator launch page; Techcouver',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'YC Winter 2025; UBC BCom Business & CS alumnus.'
+    },
+    {
+      s_no: 122,
+      category: 'Founder',
+      task_id: 'SLV-TSK-704',
+      full_name: 'Kenneth Wu',
+      university_or_company: 'Mundo AI',
+      course_or_title: 'Co-Founder & CTO',
+      graduation_or_exp: 'Founder (Founded 2024)',
+      field_or_industry: 'AI / Data Infrastructure',
+      city: 'Vancouver',
+      country: 'Canada',
+      target_location: 'British Columbia, Canada',
+      job_status: 'Active founder',
+      open_to_work_signal: 'US$24M total raise ($20M Series A) Sep 2026',
+      linkedin_url: 'https://www.linkedin.com/in/wukenneth/',
+      public_email: 'contact@mundoai.world',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'Y Combinator launch page; Techcouver',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Co-Founder and CTO of Mundo AI.'
+    },
+    {
+      s_no: 131,
+      category: 'Founder',
+      task_id: 'SLV-TSK-704',
+      full_name: 'Paul Ziadé',
+      university_or_company: 'North Vector Dynamics',
+      course_or_title: 'Co-Founder & CEO',
+      graduation_or_exp: 'Founder (Founded 2022)',
+      field_or_industry: 'Defence Tech / Missile Systems',
+      city: 'Calgary',
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Active founder',
+      open_to_work_signal: 'Series A >US$20M closed Oct 26, 2026',
+      linkedin_url: 'https://www.linkedin.com/in/paul-ziade/',
+      public_email: 'Not public',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'GlobeNewswire; Tank Talks',
+      likely_solvrex_service_fit: 'LinkedIn optimization & executive personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Former University of Calgary engineering professor.'
+    },
+    {
+      s_no: 141,
+      category: 'Founder',
+      task_id: 'SLV-TSK-705',
+      full_name: 'Adam Keating',
+      university_or_company: 'CoLab (CoLab AI)',
+      course_or_title: 'Co-Founder & CEO',
+      graduation_or_exp: 'Founder (Founded 2017)',
+      field_or_industry: 'AI / Engineering CAD Collaboration',
+      city: "St. John's",
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Active founder',
+      open_to_work_signal: 'US$72M Series C; Bombardier AI contract 2026',
+      linkedin_url: 'https://www.linkedin.com/in/adammichaelkeating/',
+      public_email: 'Not public',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'Inspiring Canadians; Deloitte Fast 50',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Memorial University alumnus; Y Combinator alumnus.'
+    },
+    {
+      s_no: 142,
+      category: 'Founder',
+      task_id: 'SLV-TSK-705',
+      full_name: 'Scott Stevenson',
+      university_or_company: 'Spellbook',
+      course_or_title: 'Co-Founder & CEO',
+      graduation_or_exp: 'Founder (Founded 2018)',
+      field_or_industry: 'Legal Tech / AI Contract Drafting',
+      city: "St. John's",
+      country: 'Canada',
+      target_location: 'Not public',
+      job_status: 'Active founder',
+      open_to_work_signal: 'US$50M Series B (Khosla Ventures); Fast 50',
+      linkedin_url: 'https://www.linkedin.com/in/scottas/',
+      public_email: 'Not public',
+      mobile_phone: 'Not public',
+      source_of_contact_info: 'CanadianSME; blog.scottstevenson.net',
+      likely_solvrex_service_fit: 'LinkedIn optimization, Personal branding',
+      outreach_status: 'Not contacted',
+      date_collected: '2026-11-16',
+      notes: 'Memorial University computer engineering graduate.'
+    }
+  ];
+
+  // 7. Audit Log
   const auditLogs = [
     {
-      id: 'AUD-001',
-      user: 'Vikram Sethi (Manager)',
+      id: 'AUD-SLV-001',
+      user: 'Vikram Sethi (Solvrex Operations)',
       action: 'target edit',
-      target_key: 'completion_rate',
-      old_value: '85',
-      new_value: '90',
-      timestamp: '2026-11-15T09:15:00Z'
+      target_key: 'completed_daily_target',
+      old_value: '500',
+      new_value: '300',
+      timestamp: '2026-11-16T09:15:00Z'
     },
     {
-      id: 'AUD-002',
-      user: 'Vikram Sethi (Manager)',
-      action: 'target edit',
-      target_key: 'accuracy_rate',
-      old_value: '92',
-      new_value: '95',
-      timestamp: '2026-11-15T09:20:00Z'
+      id: 'AUD-SLV-002',
+      user: 'Vikram Sethi (Solvrex Operations)',
+      action: 'data sync',
+      target_key: 'Solvrex Batch 7 Lead Ingestion',
+      old_value: 'Batch 6',
+      new_value: 'Batch 7 (260 Verified Leads)',
+      timestamp: '2026-11-16T09:20:00Z'
     },
     {
-      id: 'AUD-003',
+      id: 'AUD-SLV-003',
       user: 'Sanjay Gupta (Admin)',
-      action: 'user change',
-      target_key: 'User Ananya Roy (USR-005)',
-      old_value: 'Role: Junior Analyst',
-      new_value: 'Role: Analyst',
-      timestamp: '2026-11-15T10:00:00Z'
+      action: 'system update',
+      target_key: 'Company Profile & MongoDB Cluster',
+      old_value: 'Generic Prototype',
+      new_value: 'Solvrex Private Limited Enterprise Pipeline',
+      timestamp: '2026-11-16T10:00:00Z'
     }
   ];
 
-  // 7. Import Errors List (Demonstrating Section 4 requirement)
+  // 8. Import Errors (Section 4 Compliance)
   const importErrors = [
     {
-      id: 'ERR-PILOT-01',
-      source_record_id: 'SRC-TRACKER-9941',
-      error_reason: 'Missing required field(s): due_date in source record',
+      id: 'ERR-SLV-01',
+      source_record_id: 'SLV-FEED-MISSING-DUE-DATE',
+      error_reason: 'Missing required field(s): due_date in candidate intake',
       raw_data: {
-        source_record_id: 'SRC-TRACKER-9941',
-        analyst_id: 'USR-002',
-        task_name: 'Unscheduled Retail Verification Sample',
-        vertical: 'E-commerce',
-        city: 'Pune',
-        rows_assigned: 300
+        candidate_name: 'Unverified Economics Graduate',
+        university: 'Carleton University',
+        rows_assigned: 50
       },
-      timestamp: '2026-11-18T06:00:04Z'
-    },
-    {
-      id: 'ERR-PILOT-02',
-      source_record_id: 'SRC-TRACKER-9988',
-      error_reason: 'Analyst ID USR-999 does not match any registered analyst',
-      raw_data: {
-        source_record_id: 'SRC-TRACKER-9988',
-        analyst_id: 'USR-999',
-        task_name: 'Unassigned Logistics Lead List',
-        due_date: '2026-11-19',
-        rows_assigned: 200
-      },
-      timestamp: '2026-11-19T06:00:07Z'
+      timestamp: '2026-11-16T06:00:02Z'
     }
   ];
 
-  // 8. Sync Metadata
+  // 9. Sync Metadata
   const nowIso = new Date().toISOString();
   const syncMeta = {
     last_updated: nowIso,
@@ -719,9 +1036,10 @@ export function seedDatabase() {
     last_success_timestamp: nowIso,
     error_message: null,
     scheduled_time: '06:00 AM IST Daily',
-    source_name: 'Task / Lead Production Tracker (API v1.4)'
+    source_name: 'Solvrex Lead Production Tracker (Batch 7 API)'
   };
 
+  // Reset local file/memory store
   db.resetAll({
     users,
     tasks,
@@ -730,10 +1048,41 @@ export function seedDatabase() {
     settings,
     audit_log: auditLogs,
     import_errors: importErrors,
-    sync_meta: syncMeta
+    sync_meta: syncMeta,
+    leads
   });
 
-  console.log('Seeding completed successfully!');
+  // Also sync directly to MongoDB if Mongoose connection is ready!
+  if (mongoose.connection.readyState === 1) {
+    try {
+      await Promise.all([
+        User.deleteMany({}),
+        Task.deleteMany({}),
+        QACheck.deleteMany({}),
+        Coverage.deleteMany({}),
+        Setting.deleteMany({}),
+        AuditLog.deleteMany({}),
+        ImportError.deleteMany({}),
+        Lead.deleteMany({})
+      ]);
+
+      await Promise.all([
+        User.insertMany(users),
+        Task.insertMany(tasks),
+        QACheck.insertMany(qaChecks),
+        Coverage.insertMany(coverage),
+        Setting.insertMany(settings),
+        AuditLog.insertMany(auditLogs),
+        ImportError.insertMany(importErrors),
+        Lead.insertMany(leads)
+      ]);
+      console.log('[MongoDB] All Solvrex Private Limited collections successfully populated in MongoDB.');
+    } catch (err) {
+      console.warn('[MongoDB] Warning during Mongo sync:', err.message);
+    }
+  }
+
+  console.log('[Seed] Solvrex Private Limited data successfully loaded!');
 }
 
 export default seedDatabase;

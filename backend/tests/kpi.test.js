@@ -41,8 +41,10 @@ test('KPI 3: Accuracy rate = (rows correct / rows checked in QA) * 100', () => {
 });
 
 test('KPI 3 Zero-QA Case: Accuracy shows null / "Not checked" when rows_checked is 0 (NEVER 0% or 100%)', () => {
-  // Test with a specific task that has rows_checked = 0 (TSK-109)
-  const result = KPIService.calculateKPIs({ taskName: 'TSK-109' });
+  // Test with a specific task that has rows_checked = 0
+  const zeroQACheck = db.get('qa_checks').find(q => q.rows_checked === 0);
+  const taskName = zeroQACheck ? zeroQACheck.task_id : 'SLV-TSK-707';
+  const result = KPIService.calculateKPIs({ taskName });
   assert.equal(result.kpis.accuracyRate.value, null, 'Accuracy value must be null when QA sample is 0');
   assert.equal(result.kpis.accuracyRate.formatted, 'Not checked', 'Formatted label must be "Not checked"');
   assert.notEqual(result.kpis.accuracyRate.value, 0, 'Must NOT be 0%');
@@ -98,7 +100,7 @@ test('KPI 7: Duplicate rate = (duplicate rows found / rows completed) * 100', ()
 
 test('KPI 8: Pending / backlog = count of assigned tasks not completed and past due date', () => {
   const result = KPIService.calculateKPIs();
-  assert.ok(result.kpis.pendingBacklog.value >= 1, 'Should find overdue task TSK-108');
+  assert.ok(result.kpis.pendingBacklog.value >= 1, 'Should find overdue task');
   assert.equal(result.kpis.pendingBacklog.status, 'red', 'Overdue backlog must be status RED');
 });
 

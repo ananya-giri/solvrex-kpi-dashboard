@@ -13,7 +13,15 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const user = db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase());
+  const normalizedEmail = email.toLowerCase().trim();
+  const aliasEmail = normalizedEmail.includes('@company.com') 
+    ? normalizedEmail.replace('@company.com', '@solvrex.com')
+    : (normalizedEmail.includes('@solvrex.com') ? normalizedEmail.replace('@solvrex.com', '@company.com') : normalizedEmail);
+
+  const user = db.findOne('users', u => {
+    const uEmail = u.email.toLowerCase();
+    return uEmail === normalizedEmail || uEmail === aliasEmail;
+  });
   if (!user || !user.active) {
     return res.status(401).json({ error: 'Invalid credentials or inactive account' });
   }

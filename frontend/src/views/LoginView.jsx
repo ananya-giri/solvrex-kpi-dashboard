@@ -4,7 +4,7 @@ import { BarChart3, ShieldCheck, Lock, Mail, UserCheck, AlertCircle } from 'luci
 
 export default function LoginView({ onLoginSuccess }) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('manager@company.com');
+  const [email, setEmail] = useState('manager@solvrex.com');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -42,10 +42,10 @@ export default function LoginView({ onLoginSuccess }) {
           <BarChart3 className="w-7 h-7" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Analyst Team KPI Dashboard
+          Solvrex Private Limited
         </h2>
         <p className="mt-2 text-xs sm:text-sm text-slate-400">
-          Output, quality and delivery in one trusted view &bull; Rs. 0 Budget
+          Analyst Team KPI Dashboard &bull; Output, Quality & Delivery
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default function LoginView({ onLoginSuccess }) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
+                  placeholder="name@solvrex.com"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -114,7 +114,7 @@ export default function LoginView({ onLoginSuccess }) {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => handleQuickLogin('manager@company.com')}
+                onClick={() => handleQuickLogin('manager@solvrex.com')}
                 className="p-2 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 rounded-lg text-left transition-colors group"
               >
                 <div className="font-semibold text-emerald-400 group-hover:text-emerald-300 text-[11px]">
@@ -126,7 +126,7 @@ export default function LoginView({ onLoginSuccess }) {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('rahul@company.com')}
+                onClick={() => handleQuickLogin('rahul@solvrex.com')}
                 className="p-2 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 rounded-lg text-left transition-colors group"
               >
                 <div className="font-semibold text-blue-400 group-hover:text-blue-300 text-[11px]">
@@ -138,7 +138,7 @@ export default function LoginView({ onLoginSuccess }) {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('priya@company.com')}
+                onClick={() => handleQuickLogin('priya@solvrex.com')}
                 className="p-2 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 rounded-lg text-left transition-colors group"
               >
                 <div className="font-semibold text-purple-400 group-hover:text-purple-300 text-[11px]">
@@ -150,7 +150,7 @@ export default function LoginView({ onLoginSuccess }) {
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin@company.com')}
+                onClick={() => handleQuickLogin('admin@solvrex.com')}
                 className="p-2 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 rounded-lg text-left transition-colors group"
               >
                 <div className="font-semibold text-amber-400 group-hover:text-amber-300 text-[11px]">

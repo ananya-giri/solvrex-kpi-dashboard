@@ -1,4 +1,4 @@
-# 📊 Analyst Team KPI Dashboard (MERN Stack)
+# 📊 Solvrex Private Limited — Analyst KPI Dashboard (MERN Stack)
 
 [![CI Pipeline](https://github.com/ananya-giri/solvrex-kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/ananya-giri/solvrex-kpi-dashboard/actions/workflows/ci.yml)
 [![CD Pipeline](https://github.com/ananya-giri/solvrex-kpi-dashboard/actions/workflows/cd.yml/badge.svg)](https://github.com/ananya-giri/solvrex-kpi-dashboard/actions/workflows/cd.yml)
@@ -7,7 +7,9 @@
 [![Stack](https://img.shields.io/badge/Stack-MERN-green)](package.json)
 [![Budget](https://img.shields.io/badge/Budget-Rs.%200%20(Zero%20Spend)-blue)](HANDOVER_NOTE.md)
 
-An enterprise-ready, containerized, and horizontally scalable KPI Dashboard engineered for analyst operations: **output, quality, and delivery in one trusted view**. Built strictly to the Zero-Spend Build Specification using the **MERN stack** (MongoDB, Express, React, Node.js) paired with **Redis distributed caching**, **Nginx reverse proxy load balancing**, and **advanced CI/CD automation**.
+An enterprise-ready, containerized, and horizontally scalable KPI Dashboard engineered for **Solvrex Private Limited** analyst operations: **output, quality, and delivery in one trusted view**. Built strictly to the Zero-Spend Build Specification using the **MERN stack** (MongoDB, Express, React, Node.js) paired with **Redis distributed caching**, **Nginx reverse proxy load balancing**, and **advanced CI/CD automation**.
+
+> **Live Data:** Batch 7 (Nov 2026) — 88 leads across Students, Graduates, and Founders segments. All KPI calculations derived from real Solvrex production data.
 
 ---
 
@@ -184,10 +186,10 @@ npm test
 
 | Persona | Role | Email | Password | Default Redirect |
 |---|---|---|---|---|
-| **Vikram Sethi** | Manager | `manager@company.com` | `password123` | `/team` (Team View) |
-| **Rahul Sharma** | Analyst | `rahul@company.com` | `password123` | `/individual` (Individual View) |
-| **Priya Patel** | Analyst | `priya@company.com` | `password123` | `/individual` (Individual View) |
-| **Sanjay Gupta** | Admin | `admin@company.com` | `password123` | `/settings` (Settings View) |
+| **Vikram Sethi** | Manager | `manager@solvrex.com` | `password123` | `/team` (Team View) |
+| **Rahul Sharma** | Analyst | `rahul@solvrex.com` | `password123` | `/individual` (Individual View) |
+| **Priya Patel** | Analyst | `priya@solvrex.com` | `password123` | `/individual` (Individual View) |
+| **Sanjay Gupta** | Admin | `admin@solvrex.com` | `password123` | `/settings` (Settings View) |
 
 ---
 
@@ -197,7 +199,7 @@ npm test
 |---|---|---|
 | `PORT` | `5000` | Port for Express backend server |
 | `NODE_ENV` | `production` | Execution environment (`production` / `development`) |
-| `MONGODB_URI` | `mongodb://mongodb:27017/kpi_dashboard` | Connection string for MongoDB database |
+| `MONGODB_URI` | `mongodb://mongodb:27017/solvrex_kpi` | Connection string for MongoDB database |
 | `REDIS_URL` | `redis://redis:6379` | Connection string for Redis cache |
 | `JWT_SECRET` | `zero-spend-kpi-dashboard-production-secret-2026` | Secret key for signing authentication tokens |
 
