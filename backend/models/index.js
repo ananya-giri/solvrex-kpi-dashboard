@@ -12,60 +12,71 @@ import mongoose from 'mongoose';
 */
 
 const UserSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true, unique: true, index: true },
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, index: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['Manager', 'Analyst', 'Admin'], required: true },
-  team: { type: String, required: true },
-  active: { type: Boolean, default: true }
+  role: { type: String, enum: ['Manager', 'Analyst', 'Admin'], required: true, index: true },
+  team: { type: String, required: true, index: true },
+  active: { type: Boolean, default: true, index: true }
 }, { timestamps: true });
 
 const TaskSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  analyst_id: { type: String, required: true },
+  id: { type: String, required: true, unique: true, index: true },
+  analyst_id: { type: String, required: true, index: true },
   task_name: { type: String, required: true },
-  task_type: { type: String, required: true },
-  sheet_type: { type: String, required: true },
-  vertical: { type: String, required: true },
-  city: { type: String, required: true },
-  date_assigned: { type: String, required: true }, // YYYY-MM-DD
-  due_date: { type: String, required: true }, // YYYY-MM-DD
-  delivery_date: { type: String, default: null }, // YYYY-MM-DD or null
+  task_type: { type: String, required: true, index: true },
+  sheet_type: { type: String, required: true, index: true },
+  vertical: { type: String, required: true, index: true },
+  city: { type: String, required: true, index: true },
+  date_assigned: { type: String, required: true, index: true }, // YYYY-MM-DD
+  due_date: { type: String, required: true, index: true }, // YYYY-MM-DD
+  delivery_date: { type: String, default: null, index: true }, // YYYY-MM-DD or null
   status: { 
     type: String, 
     enum: ['In Progress', 'Completed', 'Pending Review', 'Rework', 'Overdue'], 
-    default: 'In Progress' 
+    default: 'In Progress',
+    index: true 
   },
   rows_assigned: { type: Number, required: true, default: 0 },
   rows_completed: { type: Number, required: true, default: 0 },
-  source_record_id: { type: String, required: true }
+  source_record_id: { type: String, required: true, unique: true, index: true }
 }, { timestamps: true });
 
+// High-throughput Compound Indexes for Sub-millisecond Scalable Queries
+TaskSchema.index({ analyst_id: 1, date_assigned: -1 });
+TaskSchema.index({ status: 1, due_date: 1 });
+TaskSchema.index({ vertical: 1, city: 1, sheet_type: 1 });
+TaskSchema.index({ due_date: 1, delivery_date: 1 });
+
 const QACheckSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  task_id: { type: String, required: true },
-  date_checked: { type: String, required: true },
+  id: { type: String, required: true, unique: true, index: true },
+  task_id: { type: String, required: true, index: true },
+  date_checked: { type: String, required: true, index: true },
   rows_checked: { type: Number, default: 0 },
   rows_correct: { type: Number, default: 0 },
   rows_reworked: { type: Number, default: 0 },
   duplicates_found: { type: Number, default: 0 }
 }, { timestamps: true });
 
+QACheckSchema.index({ task_id: 1, date_checked: -1 });
+
 const CoverageSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  task_id: { type: String, required: true },
-  sheet_type: { type: String, required: true },
+  id: { type: String, required: true, unique: true, index: true },
+  task_id: { type: String, required: true, index: true },
+  sheet_type: { type: String, required: true, index: true },
   required_fields_total: { type: Number, required: true, default: 0 },
   required_fields_filled: { type: Number, required: true, default: 0 },
   field_breakdown: { type: Object, default: {} }
 }, { timestamps: true });
 
+CoverageSchema.index({ task_id: 1, sheet_type: 1 });
+
 const SettingSchema = new mongoose.Schema({
-  kpi_key: { type: String, required: true },
+  kpi_key: { type: String, required: true, index: true },
   target_value: { type: Number, required: true },
-  task_type: { type: String, default: null },
-  sheet_type: { type: String, default: null },
+  task_type: { type: String, default: null, index: true },
+  sheet_type: { type: String, default: null, index: true },
   description: { type: String },
   unit: { type: String, default: '%' },
   direction: { type: String, enum: ['higher_is_better', 'lower_is_better', 'exact_zero'], default: 'higher_is_better' },
@@ -73,23 +84,29 @@ const SettingSchema = new mongoose.Schema({
   updated_at: { type: String, required: true }
 }, { timestamps: true });
 
+SettingSchema.index({ kpi_key: 1, task_type: 1, sheet_type: 1 }, { unique: true });
+
 const AuditLogSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  user: { type: String, required: true },
+  id: { type: String, required: true, unique: true, index: true },
+  user: { type: String, required: true, index: true },
   action: { type: String, required: true },
-  target_key: { type: String },
+  target_key: { type: String, index: true },
   old_value: { type: mongoose.Schema.Types.Mixed },
   new_value: { type: mongoose.Schema.Types.Mixed },
-  timestamp: { type: String, required: true }
+  timestamp: { type: String, required: true, index: true }
 }, { timestamps: true });
 
+AuditLogSchema.index({ timestamp: -1 });
+
 const ImportErrorSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  source_record_id: { type: String, required: true },
+  id: { type: String, required: true, unique: true, index: true },
+  source_record_id: { type: String, required: true, index: true },
   error_reason: { type: String, required: true },
   raw_data: { type: Object, default: {} },
-  timestamp: { type: String, required: true }
+  timestamp: { type: String, required: true, index: true }
 }, { timestamps: true });
+
+ImportErrorSchema.index({ timestamp: -1 });
 
 export const User = mongoose.models.User || mongoose.model('User', UserSchema);
 export const Task = mongoose.models.Task || mongoose.model('Task', TaskSchema);

@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -13,6 +16,7 @@ import settingsRoutes from './routes/settings.js';
 import syncRoutes from './routes/sync.js';
 import exportRoutes from './routes/export.js';
 import db from './database/dataStore.js';
+import cache from './database/cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +27,35 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/kpi_dashboard';
+
+// Security Hardening: Helmet with safe CSP for React SPA & Charts
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// Performance: Response Compression (gzip / deflate)
+app.use(compression());
+
+// Security: Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 300, // 300 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again after a minute.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 login attempts per 15 min to prevent brute force
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again in 15 minutes.' }
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
 
 // Middleware
 app.use(cors());
@@ -61,15 +94,29 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/export', exportRoutes);
 
-// Health check endpoint
+// Enhanced Health & Diagnostics Endpoint for Docker / Kubernetes probes
 app.get('/api/health', (req, res) => {
   const syncMeta = db.getSyncMeta();
+  const memUsage = process.memoryUsage();
+  const cacheStatus = cache.getStatus();
+
   res.json({
     status: 'healthy',
-    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    last_data_sync: syncMeta.last_updated,
-    version: '1.0.0 - Zero Spend Spec'
+    uptime_seconds: Math.floor(process.uptime()),
+    service: 'analyst-kpi-dashboard-api',
+    version: '1.0.0',
+    database: {
+      mongodb_connected: mongoose.connection.readyState === 1,
+      mode: mongoose.connection.readyState === 1 ? 'MongoDB' : 'Embedded JSON Store (Zero Spend)',
+      last_sync: syncMeta.last_updated
+    },
+    cache: cacheStatus,
+    system: {
+      heap_used_mb: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heap_total_mb: Math.round(memUsage.heapTotal / 1024 / 1024),
+      rss_mb: Math.round(memUsage.rss / 1024 / 1024)
+    }
   });
 });
 
@@ -88,12 +135,44 @@ app.use('/api/*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`  KPI Dashboard Backend API Server running on port ${PORT}`);
   console.log(`  Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`  Zero-Spend Budget: Rs. 0 verified`);
+  console.log(`  Scalability: Caching & Rate Limiting Active`);
   console.log(`=======================================================`);
 });
+
+// Graceful Shutdown Handling (SIGTERM & SIGINT) for Zero-Downtime Container Deployments
+const gracefulShutdown = (signal) => {
+  console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+  server.close(async () => {
+    console.log('HTTP server closed.');
+    try {
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed.');
+      }
+      if (cache.redis && cache.isRedisReady) {
+        cache.redis.disconnect();
+        console.log('Redis connection closed.');
+      }
+      console.log('Graceful shutdown completed.');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during shutdown:', err);
+      process.exit(1);
+    }
+  });
+
+  // Force shutdown after 10 seconds timeout
+  setTimeout(() => {
+    console.error('Forced shutdown due to timeout.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export default app;

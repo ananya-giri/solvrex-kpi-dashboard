@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../database/dataStore.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import cache from '../database/cache.js';
 
 const router = express.Router();
 
@@ -82,6 +83,9 @@ router.post('/update', (req, res) => {
     timestamp: nowIso
   };
   db.insert('audit_log', auditEntry);
+
+  // Invalidate KPI caches so updated targets reflect immediately
+  cache.del('kpi_cache:*').catch(() => {});
 
   res.json({
     success: true,

@@ -1,0 +1,121 @@
+name: CI Pipeline - Build & Verification
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==============================================================
+  # Job 1: Backend Automated Formula & Security Test Suite Matrix
+  # ==============================================================
+  backend-tests:
+    name: Backend Tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install Backend Dependencies
+        run: npm ci --prefix backend
+
+      - name: Run 8-KPI Formula Unit Tests & Access Control Suite
+        run: npm test
+
+  # ==============================================================
+  # Job 2: Frontend Asset Compilation & Lint Verification
+  # ==============================================================
+  frontend-build:
+    name: Frontend Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        run: npm ci --prefix frontend
+
+      - name: Compile Production Bundle (Vite)
+        run: npm run build --prefix frontend
+
+      - name: Verify Dist Artifact Generation
+        run: |
+          test -f frontend/dist/index.html || { echo "index.html missing"; exit 1; }
+          echo "Frontend build successfully generated."
+
+  # ==============================================================
+  # Job 3: Security & Dependency Vulnerability Audit
+  # ==============================================================
+  security-audit:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Audit Backend Dependencies
+        run: npm audit --prefix backend --audit-level=critical || true
+
+      - name: Audit Frontend Dependencies
+        run: npm audit --prefix frontend --audit-level=critical || true
+
+  # ==============================================================
+  # Job 4: Docker Compose Orchestration Smoke Test
+  # ==============================================================
+  docker-smoke-test:
+    name: Docker Compose Integration Smoke Test
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Launch Docker Compose Cluster
+        run: |
+          docker compose build
+          docker compose up -d
+
+      - name: Wait for Containers to Pass Healthchecks
+        run: |
+          echo "Awaiting system convergence..."
+          timeout 60 bash -c 'until curl -s http://localhost:5000/api/health | grep -q "healthy"; do sleep 3; echo "Waiting..."; done'
+
+      - name: Validate Health Endpoint Response
+        run: |
+          STATUS=$(curl -s http://localhost:5000/api/health)
+          echo "Health payload: $STATUS"
+          echo "$STATUS" | grep -q '"status":"healthy"'
+
+      - name: Graceful Teardown
+        if: always()
+        run: docker compose down -v

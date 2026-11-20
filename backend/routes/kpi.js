@@ -2,14 +2,15 @@ import express from 'express';
 import KPIService from '../services/kpiService.js';
 import { authenticate, enforceAnalystIsolation } from '../middleware/auth.js';
 import db from '../database/dataStore.js';
+import { cacheRoute } from '../database/cache.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 router.use(enforceAnalystIsolation);
 
-// GET /api/kpi/summary - The 8 KPIs with current filters
-router.get('/summary', (req, res) => {
+// GET /api/kpi/summary - The 8 KPIs with current filters (Cached for 30s)
+router.get('/summary', cacheRoute(30), (req, res) => {
   try {
     const summary = KPIService.calculateKPIs(req.query);
     const syncMeta = db.getSyncMeta();
@@ -24,8 +25,8 @@ router.get('/summary', (req, res) => {
   }
 });
 
-// GET /api/kpi/trend - 30-day trend chart
-router.get('/trend', (req, res) => {
+// GET /api/kpi/trend - 30-day trend chart (Cached for 60s)
+router.get('/trend', cacheRoute(60), (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
     const trend = KPIService.getTrendData(req.query, days);
@@ -36,8 +37,8 @@ router.get('/trend', (req, res) => {
   }
 });
 
-// GET /api/kpi/team - Team summary table (one row per analyst)
-router.get('/team', (req, res) => {
+// GET /api/kpi/team - Team summary table (one row per analyst) (Cached for 30s)
+router.get('/team', cacheRoute(30), (req, res) => {
   try {
     // If analyst, return only their row
     if (req.user.role === 'Analyst') {
@@ -52,8 +53,8 @@ router.get('/team', (req, res) => {
   }
 });
 
-// GET /api/kpi/work-mix - Bar chart breakdown by vertical / city / sheet type
-router.get('/work-mix', (req, res) => {
+// GET /api/kpi/work-mix - Bar chart breakdown by vertical / city / sheet type (Cached for 60s)
+router.get('/work-mix', cacheRoute(60), (req, res) => {
   try {
     const mix = KPIService.getWorkMix(req.query);
     res.json(mix);

@@ -2,6 +2,7 @@ import express from 'express';
 import SyncService from '../services/syncService.js';
 import db from '../database/dataStore.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import cache from '../database/cache.js';
 
 const router = express.Router();
 
@@ -17,6 +18,9 @@ router.get('/status', (req, res) => {
 router.post('/refresh', requireRole(['Manager', 'Admin']), (req, res) => {
   const { simulateFailure } = req.body || {};
   const result = SyncService.refreshNow(req.user, simulateFailure);
+  if (result.success) {
+    cache.del('kpi_cache:*').catch(() => {});
+  }
   res.json(result);
 });
 
